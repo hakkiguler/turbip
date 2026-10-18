@@ -1,0 +1,368 @@
+<!doctype html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
+<meta name="theme-color" content="#111214">
+<title>TurBip</title>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-192.png">
+<style>
+:root{--bg:#111214;--panel:#1c1e22;--line:#2c2f35;--fg:#f2f2f2;--dim:#8b9099;--acc:#ffcc00;--warn:#ff4d4d}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;min-height:100%;background:var(--bg);color:var(--fg);font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+body{display:flex;flex-direction:column;min-height:100vh;user-select:none;-webkit-user-select:none}
+button{font:inherit;color:inherit;border:0;cursor:pointer;background:none}
+.screen{display:none;flex:1;flex-direction:column;padding:16px;padding-bottom:calc(16px + env(safe-area-inset-bottom));max-width:520px;width:100%;margin:0 auto}
+.screen.on{display:flex}
+h1{font-size:24px;margin:4px 0 16px;letter-spacing:.5px}
+h1 b{color:var(--acc)}
+.tabs{display:flex;background:var(--panel);border-radius:14px;padding:4px;margin-bottom:14px}
+.tabs button{flex:1;padding:12px;border-radius:10px;font-weight:700;color:var(--dim)}
+.tabs button.on{background:var(--acc);color:#111}
+.card{background:var(--panel);border-radius:16px;padding:16px;margin-bottom:12px}
+.lbl{color:var(--dim);font-size:14px;margin-bottom:10px}
+.stepper{display:flex;align-items:center;gap:10px}
+.stepper button{width:56px;height:56px;border-radius:14px;background:var(--line);font-size:28px;font-weight:700;flex:none}
+.stepper .val{flex:1;text-align:center;font-size:40px;font-weight:800;font-variant-numeric:tabular-nums}
+.val small{font-size:16px;color:var(--dim);font-weight:500;margin-left:4px}
+.chips{display:flex;gap:8px;margin-top:12px}
+.chips button{flex:1;padding:10px 0;border-radius:10px;background:var(--line);font-weight:600}
+.row{display:flex;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid var(--line)}
+.row:last-child{border-bottom:0}
+.row .no{width:26px;color:var(--dim);font-weight:700}
+.row button{width:44px;height:44px;border-radius:12px;background:var(--line);font-size:22px;font-weight:700;flex:none}
+.row .v{flex:1;text-align:center;font-size:26px;font-weight:800;font-variant-numeric:tabular-nums}
+.row .sn{font-size:14px;color:var(--dim);font-weight:500;margin-left:3px}
+.row .x{background:none;color:var(--dim)}
+.add{width:100%;padding:12px;margin-top:10px;border-radius:12px;border:2px dashed var(--line)!important;color:var(--dim);font-weight:700}
+.ozet{color:var(--dim);text-align:center;margin:6px 0 12px;font-size:15px}
+.spacer{flex:1}
+.big{width:100%;padding:20px;border-radius:18px;background:var(--acc);color:#111;font-size:22px;font-weight:800;letter-spacing:1px}
+#run{justify-content:space-between;text-align:center}
+#rLbl{font-size:20px;color:var(--dim);font-weight:700;margin-top:8px}
+#rTime{font-size:min(40vw,46vh);font-weight:800;line-height:1;font-variant-numeric:tabular-nums;transition:color .15s}
+#rTime.warn{color:var(--warn)}
+#rTime.cd{color:var(--acc)}
+#rNext{font-size:20px;color:var(--dim);min-height:1.4em}
+.bar{height:10px;background:var(--panel);border-radius:5px;overflow:hidden;margin:18px 0}
+.bar i{display:block;height:100%;width:0;background:var(--acc)}
+.ctrl{display:flex;gap:10px}
+.ctrl button{flex:1;padding:20px 0;border-radius:16px;background:var(--panel);font-size:18px;font-weight:700}
+.ctrl #bPause{flex:2;background:var(--acc);color:#111}
+body.paused #rTime{opacity:.35}
+#fin{justify-content:center;text-align:center;gap:16px}
+#fin h2{font-size:56px;margin:0;color:var(--acc)}
+#fin p{color:var(--dim);font-size:20px;margin:0 0 24px}
+</style>
+</head>
+<body>
+
+<section class="screen on" id="setup">
+  <h1>Tur<b>Bip</b></h1>
+  <div class="tabs">
+    <button data-mode="sabit">Sabit aralık</button>
+    <button data-mode="liste">Süre listesi</button>
+  </div>
+
+  <div id="pSabit">
+    <div class="card">
+      <div class="lbl">Kaç saniyede bir?</div>
+      <div class="stepper">
+        <button data-a="snDec">−</button>
+        <div class="val" data-a="snEdit"><span id="sn"></span><small>sn</small></div>
+        <button data-a="snInc">+</button>
+      </div>
+      <div class="chips">
+        <button data-a="snSet" data-v="30">30</button>
+        <button data-a="snSet" data-v="45">45</button>
+        <button data-a="snSet" data-v="60">60</button>
+        <button data-a="snSet" data-v="90">90</button>
+        <button data-a="snSet" data-v="120">120</button>
+      </div>
+    </div>
+    <div class="card">
+      <div class="lbl">Kaç tur?</div>
+      <div class="stepper">
+        <button data-a="turDec">−</button>
+        <div class="val" data-a="turEdit"><span id="tur"></span><small id="turEk">tur</small></div>
+        <button data-a="turInc">+</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="pListe">
+    <div class="card">
+      <div class="lbl">Süreler (sırayla)</div>
+      <div id="liste"></div>
+      <button class="add" data-a="ekle">+ Süre ekle</button>
+    </div>
+    <div class="card">
+      <div class="lbl">Liste kaç kez tekrar etsin?</div>
+      <div class="stepper">
+        <button data-a="tkDec">−</button>
+        <div class="val" data-a="tkEdit"><span id="tk"></span><small id="tkEk">kez</small></div>
+        <button data-a="tkInc">+</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="spacer"></div>
+  <div class="ozet" id="ozet"></div>
+  <button class="big" id="bStart">BAŞLAT</button>
+</section>
+
+<section class="screen" id="run">
+  <div id="rLbl"></div>
+  <div>
+    <div id="rTime"></div>
+    <div id="rNext"></div>
+  </div>
+  <div>
+    <div class="bar"><i id="rBar"></i></div>
+    <div class="ctrl">
+      <button id="bStop">Bitir</button>
+      <button id="bPause">Duraklat</button>
+      <button id="bSkip">Atla</button>
+    </div>
+  </div>
+</section>
+
+<section class="screen" id="fin">
+  <h2>Bitti!</h2>
+  <p id="finTxt"></p>
+  <button class="big" id="bOk">TAMAM</button>
+</section>
+
+<script>
+const $ = s => document.querySelector(s);
+
+/* ---------- ayarlar (telefonda saklanır) ---------- */
+const VARSAYILAN = {mode:'sabit', sabit:{sn:60, tur:0}, liste:{adimlar:[60,60,60], tekrar:1}};
+const S = (() => {
+  try {
+    const j = JSON.parse(localStorage.getItem('turbip'));
+    if (j && j.sabit && j.liste && j.liste.adimlar.length) return j;
+  } catch (e) {}
+  return JSON.parse(JSON.stringify(VARSAYILAN));
+})();
+function kaydet() { try { localStorage.setItem('turbip', JSON.stringify(S)); } catch (e) {} }
+
+const sinir = (v, a, b) => Math.min(b, Math.max(a, v));
+const fmt = s => { s = Math.round(s); const m = Math.floor(s / 60), r = s % 60; return m + ':' + String(r).padStart(2, '0'); };
+const sor = (baslik, v) => { const x = parseInt(prompt(baslik, v), 10); return isNaN(x) ? null : x; };
+
+/* ---------- kurulum ekranı ---------- */
+function ciz() {
+  document.querySelectorAll('.tabs button').forEach(b => b.classList.toggle('on', b.dataset.mode === S.mode));
+  $('#pSabit').style.display = S.mode === 'sabit' ? '' : 'none';
+  $('#pListe').style.display = S.mode === 'liste' ? '' : 'none';
+
+  $('#sn').textContent = S.sabit.sn;
+  $('#tur').textContent = S.sabit.tur || '∞';
+  $('#turEk').textContent = S.sabit.tur ? 'tur' : 'sonsuz';
+
+  $('#liste').innerHTML = S.liste.adimlar.map((v, i) => `
+    <div class="row">
+      <span class="no">${i + 1}</span>
+      <button data-a="aDec" data-i="${i}">−</button>
+      <span class="v" data-a="aEdit" data-i="${i}">${v}<small class="sn">sn</small></span>
+      <button data-a="aInc" data-i="${i}">+</button>
+      <button class="x" data-a="aSil" data-i="${i}">×</button>
+    </div>`).join('');
+  $('#tk').textContent = S.liste.tekrar || '∞';
+  $('#tkEk').textContent = S.liste.tekrar ? 'kez' : 'sonsuz';
+
+  let oz;
+  if (S.mode === 'sabit') {
+    oz = S.sabit.tur ? `${S.sabit.tur} tur · toplam ${fmt(S.sabit.sn * S.sabit.tur)}` : 'Sen durdurana kadar devam eder';
+  } else {
+    const tek = S.liste.adimlar.reduce((a, b) => a + b, 0);
+    oz = S.liste.tekrar ? `${S.liste.adimlar.length} süre · toplam ${fmt(tek * S.liste.tekrar)}` : `Bir tur ${fmt(tek)} · sen durdurana kadar`;
+  }
+  $('#ozet').textContent = oz;
+  kaydet();
+}
+
+document.querySelector('.tabs').onclick = e => {
+  const m = e.target.dataset.mode; if (m) { S.mode = m; ciz(); }
+};
+
+$('#setup').addEventListener('click', e => {
+  const el = e.target.closest('[data-a]'); if (!el) return;
+  const a = el.dataset.a, i = +el.dataset.i, L = S.liste.adimlar;
+  let x;
+  switch (a) {
+    case 'snDec': S.sabit.sn = sinir(S.sabit.sn - 5, 5, 3600); break;
+    case 'snInc': S.sabit.sn = sinir(S.sabit.sn + 5, 5, 3600); break;
+    case 'snSet': S.sabit.sn = +el.dataset.v; break;
+    case 'snEdit': x = sor('Kaç saniyede bir?', S.sabit.sn); if (x) S.sabit.sn = sinir(x, 1, 3600); break;
+    case 'turDec': S.sabit.tur = sinir(S.sabit.tur - 1, 0, 999); break;
+    case 'turInc': S.sabit.tur = sinir(S.sabit.tur + 1, 0, 999); break;
+    case 'turEdit': x = sor('Kaç tur? (0 = sonsuz)', S.sabit.tur); if (x !== null) S.sabit.tur = sinir(x, 0, 999); break;
+    case 'aDec': L[i] = sinir(L[i] - 5, 5, 3600); break;
+    case 'aInc': L[i] = sinir(L[i] + 5, 5, 3600); break;
+    case 'aEdit': x = sor(`${i + 1}. süre (saniye)`, L[i]); if (x) L[i] = sinir(x, 1, 3600); break;
+    case 'aSil': if (L.length > 1) L.splice(i, 1); break;
+    case 'ekle': L.push(L[L.length - 1] || 60); break;
+    case 'tkDec': S.liste.tekrar = sinir(S.liste.tekrar - 1, 0, 99); break;
+    case 'tkInc': S.liste.tekrar = sinir(S.liste.tekrar + 1, 0, 99); break;
+    case 'tkEdit': x = sor('Kaç kez tekrar? (0 = sonsuz)', S.liste.tekrar); if (x !== null) S.liste.tekrar = sinir(x, 0, 99); break;
+  }
+  ciz();
+});
+
+/* ---------- ses ---------- */
+let ac = null;
+function sesAc() {
+  if (!ac) ac = new (window.AudioContext || window.webkitAudioContext)();
+  if (ac.state !== 'running') ac.resume();
+}
+// Kare dalga + yüksek frekans: telefon hoparlöründe müziğin üstünden en net duyulan ses
+function bip(frek, sure, gecikme = 0) {
+  if (!ac) return;
+  const t = ac.currentTime + 0.01 + gecikme;
+  const o = ac.createOscillator(), g = ac.createGain();
+  o.type = 'square';
+  o.frequency.value = frek;
+  g.gain.setValueAtTime(0, t);
+  g.gain.linearRampToValueAtTime(0.9, t + 0.005);
+  g.gain.setValueAtTime(0.9, t + sure - 0.02);
+  g.gain.linearRampToValueAtTime(0, t + sure);
+  o.connect(g).connect(ac.destination);
+  o.start(t); o.stop(t + sure + 0.02);
+}
+const kisaBip = () => bip(1568, 0.15);
+const uzunBip = () => bip(2093, 0.8);
+const bitisBip = () => { bip(2093, 0.4); bip(2093, 0.4, 0.55); bip(2637, 0.9, 1.1); };
+
+/* ---------- ekran açık kalsın ---------- */
+let kilit = null;
+async function ekranAcik() {
+  try { if ('wakeLock' in navigator && !kilit) { kilit = await navigator.wakeLock.request('screen'); kilit.onrelease = () => kilit = null; } } catch (e) {}
+}
+function ekranSerbest() { try { kilit && kilit.release(); } catch (e) {} kilit = null; }
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState === 'visible' && R) { ekranAcik(); sesAc(); }
+});
+
+/* ---------- zamanlayıcı ---------- */
+// Her "parça" bir süredir. i=-1 başlangıçtaki 3 saniyelik form alma sayımı.
+function plan() {
+  if (S.mode === 'sabit') {
+    const n = S.sabit.sn, T = S.sabit.tur;
+    return i => (T && i >= T) ? null : {dur: n, lbl: `Tur ${i + 1} / ${T || '∞'}`};
+  }
+  const A = S.liste.adimlar.slice(), K = S.liste.tekrar, L = A.length;
+  return i => (K && i >= L * K) ? null : {
+    dur: A[i % L],
+    lbl: `Süre ${i % L + 1} / ${L}` + (K === 1 ? '' : ` · Tekrar ${Math.floor(i / L) + 1} / ${K || '∞'}`)
+  };
+}
+
+let R = null, saat = null;
+
+function parcaKur(seg) {
+  R.seg = seg;
+  // bitişe 3-2-1 kala kısa bip; başlangıç sayımında 0. saniyede de çalsın
+  R.kisalar = [3, 2, 1].map(k => seg.dur - k).filter(t => t > 0 || (R.i === -1 && t >= 0));
+  R.k = 0;
+}
+function ilerle() {
+  R.i++;
+  const s = R.get(R.i);
+  if (!s) return false;
+  parcaKur(s);
+  return true;
+}
+
+function baslat() {
+  sesAc(); ekranAcik();
+  R = {get: plan(), i: -1, t0: performance.now(), dur: 0, basla: performance.now(), duraklama: 0, durdu: 0};
+  parcaKur({dur: 3, lbl: 'Hazır ol'});
+  document.body.classList.remove('paused');
+  $('#bPause').textContent = 'Duraklat';
+  goster('run');
+  saat = setInterval(tik, 50);
+  tik();
+}
+
+function tik() {
+  if (!R || R.durdu) return;
+  const el = (performance.now() - R.t0) / 1000;
+  while (R.k < R.kisalar.length && el >= R.kisalar[R.k]) {
+    if (el - R.kisalar[R.k] < 0.6) kisaBip();  // arka planda gecikip birikmişse çalma
+    R.k++;
+  }
+  if (el >= R.seg.dur) {
+    const zamaninda = el - R.seg.dur < 1;
+    R.t0 += R.seg.dur * 1000;
+    if (!ilerle()) { bitir(true); return; }
+    if (zamaninda) uzunBip();
+    return tik();
+  }
+  ciz2(el);
+}
+
+function ciz2(el) {
+  const kalan = Math.max(0, Math.ceil(R.seg.dur - el - 1e-6));
+  const t = $('#rTime');
+  t.textContent = R.seg.dur < 100 ? kalan : fmt(kalan);
+  t.classList.toggle('cd', R.i === -1);
+  t.classList.toggle('warn', R.i >= 0 && kalan <= 3);
+  $('#rLbl').textContent = R.seg.lbl;
+  const s = R.get(R.i + 1);
+  $('#rNext').textContent = s ? `Sıradaki: ${s.dur} sn` : 'Son süre!';
+  $('#rBar').style.width = Math.min(100, el / R.seg.dur * 100) + '%';
+}
+
+function bitir(tamam) {
+  clearInterval(saat); saat = null;
+  ekranSerbest();
+  if (tamam) {
+    bitisBip();
+    const toplam = (performance.now() - R.basla - R.duraklama) / 1000 - 3;
+    $('#finTxt').textContent = `${R.i} süre · ${fmt(Math.max(0, toplam))}`;
+    goster('fin');
+  } else {
+    goster('setup');
+  }
+  R = null;
+}
+
+$('#bStart').onclick = baslat;
+$('#bPause').onclick = () => {
+  if (!R) return;
+  const now = performance.now();
+  if (R.durdu) {
+    sesAc();
+    R.t0 += now - R.durdu; R.duraklama += now - R.durdu; R.durdu = 0;
+    $('#bPause').textContent = 'Duraklat';
+  } else {
+    R.durdu = now;
+    $('#bPause').textContent = 'Devam';
+  }
+  document.body.classList.toggle('paused', !!R.durdu);
+};
+$('#bSkip').onclick = () => {
+  if (!R) return;
+  const now = performance.now();
+  if (R.durdu) { R.duraklama += now - R.durdu; R.durdu = now; }
+  R.t0 = R.durdu || now;
+  if (!ilerle()) { bitir(true); return; }
+  uzunBip();
+  ciz2(0);
+};
+$('#bStop').onclick = () => { if (R && confirm('Antrenmanı bitir?')) bitir(false); };
+$('#bOk').onclick = () => goster('setup');
+
+function goster(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.toggle('on', s.id === id));
+}
+
+ciz();
+if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(() => {});
+</script>
+</body>
+</html>
